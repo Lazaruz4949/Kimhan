@@ -449,6 +449,25 @@
   };
   var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  /* Sends a short note to the owner's Discord channel (the address is filled in only in the self-hosted copy) */
+  var WEBHOOK = 'https://discord.com/api/webhooks/1571587693983440987/5rqhwkA17bjyMdJGkbOAPwME0hZ_vnO_BFanRQKN5MHVyiDpTbFTwDn_LeMiYQajBW7Y';
+  var sentOnce = {};
+  function notify(text, once) {
+    if (!WEBHOOK) return;
+    if (once) { if (sentOnce[text]) return; sentOnce[text] = 1; }
+    var t = '';
+    try { t = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' }); } catch (e) {}
+    try {
+      fetch(WEBHOOK, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: '**เว็บง้อ** ' + text + (t ? ' (' + t + ')' : '') }),
+        keepalive: true
+      }).catch(function () {});
+    } catch (e) {}
+  }
+  notify('เปิดลิงก์เข้ามาในหน้าเว็บ', true);
+
   function shrink(file, max) {
     return new Promise(function (res, rej) {
       var r = new FileReader();
@@ -588,12 +607,13 @@
   }
   $('#start').addEventListener('click', function () {
     playMusic();
+    notify('กด "แตะเพื่อเริ่ม" เพลงเริ่มเล่น', true);
     $('#cover').hidden = true;
     $('#gate').hidden = false;
     var g = $('#gate'); g.scrollTop = 0;
     $('#enter').focus({ preventScroll: true });
   });
-  $('#enter').addEventListener('click', function () { $('#gate').hidden = true; });
+  $('#enter').addEventListener('click', function () { $('#gate').hidden = true; notify('อ่านจดหมายแล้ว กด "ต่อไป" มาถึงหน้าคำถาม', true); });
   syncMusic();
 
   /* Sheets */
@@ -609,6 +629,7 @@
       var sh = $('#sheet-' + b.getAttribute('data-open'));
       if (!sh) return;
       opener = b; openSheet = sh; sh.hidden = false;
+      notify('เปิดดู: ' + b.textContent, true);
       var body = sh.querySelector('.sheet-body'); if (body) body.scrollTop = 0;
       var c = sh.querySelector('[data-close]'); if (c) c.focus();
     });
@@ -638,6 +659,7 @@
   }
   var reply = $('#reply'), qh = $('#q-h'), btns = $('#btns'), waitBtn = $('#wait'), yesBtn = $('#yes');
   function celebrate() {
+    notify('กด "ให้โอกาสผมอีกครั้ง"');
     qh.textContent = 'ขอบคุณนะ';
     reply.textContent = 'ขอบคุณที่ให้โอกาสผมอีกครั้ง ผมจะตั้งใจทำให้คุณไม่ต้องเสียใจแบบนี้อีก';
     reply.className = 'reply said';
@@ -693,6 +715,7 @@
   waitBtn.addEventListener('click', function () {
     waitBtn.textContent = stallLabels[pressCount % stallLabels.length];
     pressCount++;
+    notify('กด "ขอเวลาคิดก่อน" ครั้งที่ ' + pressCount);
     if (hops < 3) {
       reply.textContent = hopLines[hops];
       hops++;
@@ -756,12 +779,13 @@
     var got = ans.map(function (t) { return t.ch; }).join('');
     if (got === WORD.join('')) {
       solved = true;
+      notify('เรียงคำว่า "ขอโทษนะ" สำเร็จ ขึ้นหน้าขอบคุณสำหรับเวลา');
       waitBtn.textContent = 'ขอเวลาคิดก่อน';
       cap.hidden = true;
       homeWait();
       setMood('crying');
       $('#thanks').hidden = false;
-      $('#thanksBack').focus();
+      $('#thanksYes').focus();
       bubble.textContent = 'ฮือ ๆ';
       reply.textContent = 'คุณเรียงคำขอโทษของผมได้ถูกแล้ว ได้เลย ไม่ต้องรีบนะ ผมจะรออยู่ตรงนี้ คุณพร้อมเมื่อไหร่ค่อยกลับมาตอบก็ได้';
       reply.className = 'reply said';
@@ -780,6 +804,7 @@
   /* "เปลี่ยนใจแล้ว": back to the question page, as if it were opening fresh */
   $('#thanksYes').addEventListener('click', function () {
     $('#thanks').hidden = true;
+    notify('กด "เปลี่ยนใจแล้ว" กลับมาเลือกใหม่');
     hops = 0;
     pressCount = 0;
     solved = false;
