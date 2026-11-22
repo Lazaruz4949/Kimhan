@@ -3,6 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="th_TH">
+<meta property="og:title" content="ขอโทษนะ">
+<meta property="og:description" content="มีเรื่องที่อยากบอกคุณ">
+<meta property="og:url" content="https://kongza332243.github.io/-/">
+<meta property="og:image" content="https://kongza332243.github.io/-/p5.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="description" content="มีเรื่องที่อยากบอกคุณ">
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>ขอโทษนะ</title>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -251,6 +259,12 @@
   .ycard h1 { font-size: clamp(2rem, 9vw, 2.6rem); line-height: 1.2; }
   .ycard p { font-size: 1.02rem; color: var(--ink); }
   .ycard .sign { color: var(--accent); font-weight: 600; }
+  .ymsg { display: grid; gap: 8px; text-align: left; margin-top: 6px; padding-top: 14px; border-top: 1px dashed var(--line); font-family: var(--font-body); line-height: 1.6; }
+  .ymsg label { font-size: .85rem; color: var(--muted); }
+  .ymsg textarea { width: 100%; font: inherit; font-size: 16px; color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; resize: vertical; min-height: 84px; }
+  .ymsg .btn { padding: 10px 20px; justify-self: start; }
+  .ymsg .btn:disabled { opacity: .6; cursor: default; }
+  .ymsg-s { font-size: .85rem; color: var(--accent); min-height: 1.4em; }
   .ymute { position: fixed; z-index: 2; top: max(10px, env(safe-area-inset-top, 0px)); right: max(10px, env(safe-area-inset-right, 0px)); margin: 0; }
   @media (prefers-reduced-motion: no-preference) {
     .yay .pol { animation: ypop .8s cubic-bezier(.2, .8, .3, 1) both; animation-delay: var(--d, 0s); }
@@ -417,6 +431,12 @@
         <p>ขอบคุณที่ให้โอกาสผมอีกครั้ง ผมจะตั้งใจฟังคุณให้มากขึ้น ใจเย็นลง และดูแลคุณให้ดีที่สุด</p>
         <p>ผมรักคุณนะ</p>
         <p class="sign">ก้อง</p>
+        <form class="ymsg" id="yMsg" hidden>
+          <label for="yText">อยากบอกอะไรผมไหม (ไม่บอกก็ได้นะ)</label>
+          <textarea id="yText" rows="3" maxlength="800" placeholder="พิมพ์ข้อความตรงนี้"></textarea>
+          <button class="btn yes" id="ySend" type="submit">ส่งข้อความถึงผม</button>
+          <p class="ymsg-s" id="yStatus" aria-live="polite"></p>
+        </form>
       </div>
     </div>
     <div class="yrow bottom" id="yBottom"></div>
@@ -510,6 +530,14 @@
         keepalive: true
       }).catch(function () {});
     } catch (e) {}
+  }
+  function sendText(text) {
+    if (!WEBHOOK) return Promise.reject(new Error('no webhook'));
+    return fetch(WEBHOOK, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content: text.slice(0, 1900) })
+    }).then(function (r) { if (!r.ok) throw new Error('http ' + r.status); });
   }
   notify('เปิดลิงก์เข้ามาในหน้าเว็บ', true);
 
@@ -721,6 +749,21 @@
 
   /* Final page: the photos from "รูปของเรา", scattered around the message */
   var yayBuilt = false;
+  $('#yMsg').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var box = $('#yText'), st = $('#yStatus'), btn = $('#ySend'), text = box.value.trim();
+    if (!text) { st.textContent = 'พิมพ์ข้อความก่อนนะ'; return; }
+    btn.disabled = true;
+    st.textContent = 'กำลังส่ง…';
+    var t = '';
+    try { t = new Date().toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' }); } catch (err) {}
+    sendText('**เว็บง้อ ข้อความจากคุณธนัชชา**' + (t ? ' (' + t + ')' : '') + '\n' + text).then(function () {
+      st.textContent = 'ส่งแล้ว ขอบคุณที่บอกผมนะ';
+      box.value = '';
+    }).catch(function () {
+      st.textContent = 'ส่งไม่สำเร็จ ลองกดส่งอีกครั้งนะ';
+    }).then(function () { btn.disabled = false; });
+  });
   function polaroid(i, extra) {
     var f = gateFr[i], im = f && f.querySelector('img');
     if (!im || im.hidden || !im.getAttribute('src')) return null;
@@ -751,6 +794,7 @@
       ];
       plan.forEach(function (it) { var el = polaroid(it[1], it[2]); if (el) it[0].appendChild(el); });
     }
+    $('#yMsg').hidden = !WEBHOOK;
     $('#yay').hidden = false;
     var yg = $('#yay'); yg.scrollTop = 0;
   }
