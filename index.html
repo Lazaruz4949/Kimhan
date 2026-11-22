@@ -231,6 +231,32 @@
   .cap-card .cap-msg { min-height: 1.5em; color: var(--accent); }
   .cap-btns { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
   .cap-btns .btn { padding: 10px 26px; }
+  /* Thank-you page after "ให้โอกาส": photos scattered around the message */
+  .yay { z-index: 35; }
+  .yay-wrap { width: 100%; max-width: 520px; margin: 0 auto; min-height: 100%; display: flex; flex-direction: column; justify-content: space-between; gap: 18px; padding-block: 22px; }
+  .yrow { display: flex; justify-content: space-around; align-items: flex-start; gap: 10px; padding-inline: 4px; }
+  .yrow.bottom { align-items: flex-end; }
+  .pol {
+    position: relative; flex: none; width: var(--w, 30vw); max-width: 150px; background: var(--polaroid);
+    padding: 7px 7px 26px; box-shadow: 0 1px 2px rgba(59, 36, 66, .18), 0 10px 22px rgba(59, 36, 66, .22);
+    transform: translateY(var(--dy, 0px)) rotate(var(--r, 0deg));
+  }
+  .pol::before { content: ""; position: absolute; top: -9px; left: 50%; width: 44px; height: 16px; background: color-mix(in srgb, var(--blush) 78%, transparent); transform: translateX(-50%) rotate(var(--t, -4deg)); }
+  .pol img { display: block; width: 100%; height: auto; }
+  .ymid { position: relative; width: min(74%, 310px); margin: 0 auto; }
+  .ymid .pol { position: absolute; z-index: 0; --w: 25vw; max-width: 104px; }
+  .ymid .pol.sl { left: -13%; top: -34px; }
+  .ymid .pol.sr { right: -13%; bottom: -34px; }
+  .ycard { position: relative; z-index: 1; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 26px 20px; display: grid; gap: .8em; text-align: center; font-family: var(--font-display); line-height: 1.9; }
+  .ycard h1 { font-size: clamp(2rem, 9vw, 2.6rem); line-height: 1.2; }
+  .ycard p { font-size: 1.02rem; color: var(--ink); }
+  .ycard .sign { color: var(--accent); font-weight: 600; }
+  .ymute { position: fixed; z-index: 2; top: max(10px, env(safe-area-inset-top, 0px)); right: max(10px, env(safe-area-inset-right, 0px)); margin: 0; }
+  @media (prefers-reduced-motion: no-preference) {
+    .yay .pol { animation: ypop .8s cubic-bezier(.2, .8, .3, 1) both; animation-delay: var(--d, 0s); }
+    .yay .ycard { animation: fadeUp 1s ease .1s both; }
+    @keyframes ypop { from { opacity: 0; transform: translateY(calc(var(--dy, 0px) + 24px)) rotate(var(--r, 0deg)) scale(.7); } to { opacity: 1; transform: translateY(var(--dy, 0px)) rotate(var(--r, 0deg)) scale(1); } }
+  }
   .heart { position: fixed; bottom: -48px; z-index: 50; pointer-events: none; fill: var(--accent); animation: rise 4s ease-in forwards; }
   @keyframes rise { 0% { transform: translateY(0) rotate(-8deg); opacity: 0; } 12% { opacity: .95; } 100% { transform: translateY(-115vh) rotate(14deg); opacity: 0; } }
 </style>
@@ -375,6 +401,25 @@
     <h1 class="cover-name">คุณ ธนัชชา บุญศรี</h1>
     <p class="cover-nick">ชื่อเล่น คิมหันต์</p>
     <button class="btn yes" id="start" type="button">แตะเพื่อเริ่ม</button>
+  </div>
+</div>
+
+<div class="gate yay" id="yay" role="dialog" aria-modal="true" aria-labelledby="yay-h" hidden>
+  <button class="mute ymute" id="yayMute" type="button" aria-label="หยุดเพลง">
+    <svg id="icPause2" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 5h4v14H6zM14 5h4v14h-4z"></path></svg>
+    <svg id="icPlay2" viewBox="0 0 24 24" aria-hidden="true" hidden><path d="M8 5v14l11-7z"></path></svg>
+  </button>
+  <div class="yay-wrap">
+    <div class="yrow top" id="yTop"></div>
+    <div class="ymid">
+      <div class="ycard">
+        <h1 id="yay-h">ขอบคุณนะ</h1>
+        <p>ขอบคุณที่ให้โอกาสผมอีกครั้ง ผมจะตั้งใจฟังคุณให้มากขึ้น ใจเย็นลง และดูแลคุณให้ดีที่สุด</p>
+        <p>ผมรักคุณนะ</p>
+        <p class="sign">ก้อง</p>
+      </div>
+    </div>
+    <div class="yrow bottom" id="yBottom"></div>
   </div>
 </div>
 
@@ -589,6 +634,9 @@
     $('#icPause').hidden = !playing;
     $('#icPlay').hidden = playing;
     mute.setAttribute('aria-label', playing ? 'หยุดเพลง' : 'เล่นเพลง');
+    $('#icPause2').hidden = !playing;
+    $('#icPlay2').hidden = playing;
+    $('#yayMute').setAttribute('aria-label', playing ? 'หยุดเพลง' : 'เล่นเพลง');
     vinyl.classList.toggle('paused', !playing);
   }
   function playMusic() { var p = bgm.play(); if (p && p.catch) p.catch(function () {}); }
@@ -597,6 +645,7 @@
   bgm.addEventListener('play', syncMusic);
   bgm.addEventListener('pause', syncMusic);
   mute.addEventListener('click', function () { if (bgm.paused) playMusic(); else bgm.pause(); });
+  $('#yayMute').addEventListener('click', function () { if (bgm.paused) playMusic(); else bgm.pause(); });
   /* Opening screen: words first, the first tap starts the music, the second tap goes on to the question */
   var intro = $('#intro');
   var srcLetter = $('#sheet-letter .letter');
@@ -666,7 +715,44 @@
     btns.hidden = true;
     bubble.textContent = 'ขอบคุณนะ';
     setMood('happy');
+    showYay();
     hearts(36);
+  }
+
+  /* Final page: the photos from "รูปของเรา", scattered around the message */
+  var yayBuilt = false;
+  function polaroid(i, extra) {
+    var f = gateFr[i], im = f && f.querySelector('img');
+    if (!im || im.hidden || !im.getAttribute('src')) return null;
+    var d = document.createElement('div');
+    d.className = 'pol';
+    d.style.setProperty('--r', extra.r + 'deg');
+    d.style.setProperty('--dy', (extra.dy || 0) + 'px');
+    d.style.setProperty('--d', extra.d + 's');
+    if (extra.w) d.style.setProperty('--w', extra.w + 'vw');
+    if (extra.t) d.style.setProperty('--t', extra.t + 'deg');
+    var c = document.createElement('img');
+    c.src = im.getAttribute('src');
+    c.alt = '';
+    d.appendChild(c);
+    return d;
+  }
+  function showYay() {
+    if (!yayBuilt) {
+      yayBuilt = true;
+      var top = $('#yTop'), bottom = $('#yBottom');
+      var plan = [
+        [top,    0, { r: -7, dy: 0,   d: 0.2, w: 26 }],
+        [top,    3, { r: 5,  dy: 16,  d: 0.35, w: 26, t: 4 }],
+        [top,    1, { r: -4, dy: -2,  d: 0.5, w: 26 }],
+        [bottom, 2, { r: 5,  dy: 0,   d: 0.65, w: 26, t: 3 }],
+        [bottom, 4, { r: -6, dy: -12, d: 0.8, w: 26 }],
+        [bottom, 5, { r: 6,  dy: 6,   d: 0.95, w: 26, t: 5 }]
+      ];
+      plan.forEach(function (it) { var el = polaroid(it[1], it[2]); if (el) it[0].appendChild(el); });
+    }
+    $('#yay').hidden = false;
+    var yg = $('#yay'); yg.scrollTop = 0;
   }
 
   /* "ขอเวลาคิดก่อน" hops to another spot three times, then stays and answers kindly */
